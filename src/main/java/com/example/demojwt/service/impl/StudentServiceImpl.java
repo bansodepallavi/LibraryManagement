@@ -3,19 +3,20 @@ package com.example.demojwt.service.impl;
 import com.example.demojwt.entity.Book;
 import com.example.demojwt.entity.Cart;
 import com.example.demojwt.entity.User;
-//import com.example.demojwt.entity.UserQueue;
 import com.example.demojwt.entity.UserQueue;
 import com.example.demojwt.exception.InvalidFieldException;
+import com.example.demojwt.helper.JwtUtil;
 import com.example.demojwt.repository.BookRepo;
 import com.example.demojwt.repository.CartRepo;
-//import com.example.demojwt.repository.UserQueueRepo;
 import com.example.demojwt.repository.UserQueueRepo;
 import com.example.demojwt.repository.UserRepo;
 import com.example.demojwt.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.ArrayList;
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -33,8 +34,14 @@ public class StudentServiceImpl implements StudentService {
     @Autowired
     UserQueueRepo userQueueRepo;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    boolean checkToken=true;
     @Override
     public Book issueBook(String email,long bookID) {
+        if(checkToken)
+            validateToken(email);
         validateFields(email,bookID);
         User user=userRepo.findByEmail(email);
         Book book=bookRepo.findByBookID(bookID);
@@ -67,7 +74,7 @@ public class StudentServiceImpl implements StudentService {
         if(list.size() > 0){
             for(UserQueue userQueue:list){
                 if(userQueue.getBookID() == bookID && userQueue.getUsername().equals(email))
-                    throw new InvalidFieldException("Your is stored in queue");
+                    throw new InvalidFieldException("Your request is stored in queue");
             }
         }
         UserQueue userQueue=new UserQueue(bookID,email);
@@ -76,6 +83,7 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public Book returnBook(String email,long bookID) {
+        validateToken(email);
         validateFields(email,bookID);
         User user=userRepo.findByEmail(email);
         Book book=bookRepo.findByBookID(bookID);
@@ -107,13 +115,16 @@ public class StudentServiceImpl implements StudentService {
     }
 
     private void checkUserQueue(long bookID) {
-        List<UserQueue> list=userQueueRepo.findAll();
+        List<UserQueue> list=userQueueRepo.findUserQueueByBookID(bookID);
         if(list.size() == 0)
             return;
         for(UserQueue user:list){
             if(user.getBookID() == bookID){
+                checkToken=false;
                 issueBook(user.getUsername(), user.getBookID());
                 userQueueRepo.deleteById(user.getId());
+                checkToken=true;
+                return;
             }
         }
     }
@@ -122,6 +133,7 @@ public class StudentServiceImpl implements StudentService {
     public List<Book> viewAllBooks() {
         return bookRepo.findAll();
     }
+
 
     private void checkFields(User user, Book book) {
         if(user == null)
@@ -138,5 +150,14 @@ public class StudentServiceImpl implements StudentService {
             throw new InvalidFieldException("please enter valid email address");
         if(bookID <= 0)
             throw new InvalidFieldException("enter valid book id");
+    }
+
+    public void validateToken(String email){
+        HttpServletRequest request=((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String requestTokenHeader = request.getHeader("Authorization");
+        String token =requestTokenHeader.substring(7);
+        String username=this.jwtUtil.getUsernameFromToken(token);
+        if(!username.equals(email))
+            throw new InvalidFieldException("Invalid token");
     }
 }
