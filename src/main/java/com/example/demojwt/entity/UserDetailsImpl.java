@@ -9,43 +9,25 @@ import java.util.stream.Collectors;
 
 public class UserDetailsImpl implements UserDetails {
 
-   // String email;
-    //String password;
-    //private List<GrantedAuthority> authorities;
     private User user;
-    /*UserDetailsImpl(User user){
-        this.email=user.getEmail();
-        this.password=user.getPassword();
-        this.authorities= Arrays.stream(user.getRole().split(","))
-                .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-    }*/
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> grantedAuthorities=new ArrayList<GrantedAuthority>();
-        grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_"+this.user.getRole().toUpperCase()));
+        grantedAuthorities.add(new SimpleGrantedAuthority("ADMIN"));
+        grantedAuthorities.add(new SimpleGrantedAuthority("USER"));
         return grantedAuthorities;
     }
 
-    //@Override
-    //public Collection<? extends GrantedAuthority> getAuthorities() {
-        //HashSet<SimpleGrantedAuthority> set=new HashSet<>();
-        //set.add(new SimpleGrantedAuthority(this
-          //      .user.getRole()));
-
-      //  return authorities;
-    //}
 
     @Override
     public String getPassword() {
         return this.user.getPassword();
-        //return password;
     }
 
     @Override
     public String getUsername() {
         return this.user.getEmail();
-        //return email;
     }
 
     @Override

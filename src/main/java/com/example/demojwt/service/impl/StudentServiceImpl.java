@@ -3,14 +3,19 @@ package com.example.demojwt.service.impl;
 import com.example.demojwt.entity.Book;
 import com.example.demojwt.entity.Cart;
 import com.example.demojwt.entity.User;
+//import com.example.demojwt.entity.UserQueue;
+import com.example.demojwt.entity.UserQueue;
 import com.example.demojwt.exception.InvalidFieldException;
 import com.example.demojwt.repository.BookRepo;
 import com.example.demojwt.repository.CartRepo;
+//import com.example.demojwt.repository.UserQueueRepo;
+import com.example.demojwt.repository.UserQueueRepo;
 import com.example.demojwt.repository.UserRepo;
 import com.example.demojwt.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -20,12 +25,13 @@ import java.util.regex.Pattern;
 public class StudentServiceImpl implements StudentService {
     @Autowired
     BookRepo bookRepo;
-
     @Autowired
     UserRepo userRepo;
-
     @Autowired
     CartRepo cartRepo;
+
+    @Autowired
+    UserQueueRepo userQueueRepo;
 
     @Override
     public Book issueBook(String email,long bookID) {
@@ -33,8 +39,10 @@ public class StudentServiceImpl implements StudentService {
         User user=userRepo.findByEmail(email);
         Book book=bookRepo.findByBookID(bookID);
         checkFields(user,book);
-        if(!book.isAvailable())
+        if(!book.isAvailable()) {
+            saveUser(email,bookID);
             throw new InvalidFieldException("Book is already issued by someone...");
+        }
         if(user.getCart() == null){
             Cart cart=new Cart();
             cart.setBookList(new HashSet<Book>());
@@ -54,6 +62,18 @@ public class StudentServiceImpl implements StudentService {
         return book;
     }
 
+    private void saveUser(String email, long bookID) {
+        List<UserQueue> list=userQueueRepo.findAll();
+        if(list.size() > 0){
+            for(UserQueue userQueue:list){
+                if(userQueue.getBookID() == bookID && userQueue.getUsername().equals(email))
+                    throw new InvalidFieldException("Your is stored in queue");
+            }
+        }
+        UserQueue userQueue=new UserQueue(bookID,email);
+        userQueueRepo.save(userQueue);
+    }
+
     @Override
     public Book returnBook(String email,long bookID) {
         validateFields(email,bookID);
@@ -62,7 +82,7 @@ public class StudentServiceImpl implements StudentService {
         checkFields(user,book);
         Cart cart1=user.getCart();
         if(cart1 == null)
-            throw new InvalidFieldException("Sorry....your cart is empty...");
+            throw new InvalidFieldException("Sorry you haven't issued any book....your cart is empty...");
         if(!cart1.getBookList().contains(book))
             throw new InvalidFieldException(book.getTitle()+" is not issued by you");
         if(book.isAvailable())
@@ -82,7 +102,20 @@ public class StudentServiceImpl implements StudentService {
             cartRepo.deleteById(cart.getId());
         }
         bookRepo.save(book);
+        checkUserQueue(bookID);
         return book;
+    }
+
+    private void checkUserQueue(long bookID) {
+        List<UserQueue> list=userQueueRepo.findAll();
+        if(list.size() == 0)
+            return;
+        for(UserQueue user:list){
+            if(user.getBookID() == bookID){
+                issueBook(user.getUsername(), user.getBookID());
+                userQueueRepo.deleteById(user.getId());
+            }
+        }
     }
 
     @Override

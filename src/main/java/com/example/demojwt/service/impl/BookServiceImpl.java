@@ -1,20 +1,29 @@
 package com.example.demojwt.service.impl;
 
 import com.example.demojwt.entity.Book;
+import com.example.demojwt.entity.Cart;
+import com.example.demojwt.entity.IssueDetails;
+import com.example.demojwt.entity.User;
 import com.example.demojwt.exception.InvalidFieldException;
 import com.example.demojwt.exception.ResourseNotFoundException;
 import com.example.demojwt.repository.BookRepo;
+import com.example.demojwt.repository.UserRepo;
 import com.example.demojwt.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class BookServiceImpl implements BookService {
 
     @Autowired
     private BookRepo bookRepo;
+
+    @Autowired
+    private UserRepo userRepo;
 
     @Override
     public Book addBook(Book book) {
@@ -42,10 +51,28 @@ public class BookServiceImpl implements BookService {
         }
         return book;
     }
+
     @Override
-    public List<Book> viewAllBooks() {
-        return bookRepo.findAll();
+    public List<IssueDetails> issuedBookList() {
+        List<User> list=userRepo.findAll();
+        List<IssueDetails> issueDetailsList=new ArrayList<>();
+        for(User user:list){
+            Cart cart=user.getCart();
+            if(cart != null){
+                Set<Book> bookList=cart.getBookList();
+                if(bookList.size() > 0) {
+                    for (Book book : bookList) {
+                        IssueDetails issueDetails = new IssueDetails();
+                        issueDetails.setUsername(user.getEmail());
+                        issueDetails.setBookID(book.getBookID());
+                        issueDetailsList.add(issueDetails);
+                    }
+                }
+            }
+        }
+        return issueDetailsList;
     }
+
 
     private void validateBookFields(Book book) {
         if(book.getBookID() <= 0)

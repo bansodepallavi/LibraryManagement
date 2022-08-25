@@ -1,22 +1,10 @@
 package com.example.demojwt.service.impl;
 
-import com.example.demojwt.entity.Book;
-import com.example.demojwt.entity.Cart;
 import com.example.demojwt.entity.User;
 import com.example.demojwt.exception.InvalidFieldException;
-import com.example.demojwt.exception.ResourseNotFoundException;
-import com.example.demojwt.helper.JwtAuthResponse;
-import com.example.demojwt.helper.JwtUtil;
 import com.example.demojwt.repository.UserRepo;
 import com.example.demojwt.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

@@ -1,6 +1,8 @@
 package com.example.demojwt.service;
 
 import com.example.demojwt.entity.Book;
+import com.example.demojwt.entity.IssueDetails;
+
 import java.util.List;
 
 
@@ -10,5 +12,5 @@ public interface BookService {
 
     public Book deleteBook(long bookID);
 
-    public List<Book> viewAllBooks();
+    public List<IssueDetails> issuedBookList();
 }
